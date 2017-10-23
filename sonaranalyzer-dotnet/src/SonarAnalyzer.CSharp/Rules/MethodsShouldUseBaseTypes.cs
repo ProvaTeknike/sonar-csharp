@@ -290,7 +290,7 @@ namespace SonarAnalyzer.Rules.CSharp
 
                 if (!Equals(mostGeneralType, parameterSymbol.Type) &&
                     IsConsistentAccessibility(mostGeneralType.GetEffectiveAccessibility(), methodAccessibility) &&
-                    ShouldReportOnType(mostGeneralType.GetSymbolType()))
+                    CanSuggestBaseType(mostGeneralType.GetSymbolType()))
                 {
                     return Diagnostic.Create(rule,
                         parameterSymbol.Locations.First(),
@@ -327,7 +327,7 @@ namespace SonarAnalyzer.Rules.CSharp
                 }
             }
 
-            private static bool ShouldReportOnType(ITypeSymbol typeSymbol)
+            private static bool CanSuggestBaseType(ITypeSymbol typeSymbol)
             {
                 return
                     !typeSymbol.Is(KnownType.System_Object) &&
