@@ -289,7 +289,7 @@ namespace SonarAnalyzer.Rules.CSharp
                 var mostGeneralType = FindMostGeneralType();
 
                 if (!Equals(mostGeneralType, parameterSymbol.Type) &&
-                    mostGeneralType.GetEffectiveAccessibility() >= methodAccessibility &&
+                    IsConsistentAccessibility(mostGeneralType.GetEffectiveAccessibility(), methodAccessibility) &&
                     ShouldReportOnType(mostGeneralType.GetSymbolType()))
                 {
                     return Diagnostic.Create(rule,
@@ -300,13 +300,40 @@ namespace SonarAnalyzer.Rules.CSharp
                 return null;
             }
 
+            private static bool IsConsistentAccessibility(Accessibility baseTypeAccessibility, Accessibility methodAccessibility)
+            {
+                switch (methodAccessibility)
+                {
+                    case Accessibility.NotApplicable:
+                        return false;
+
+                    case Accessibility.Private:
+                        return true;
+
+                    case Accessibility.Protected:
+                        return baseTypeAccessibility == Accessibility.Public ||
+                            baseTypeAccessibility == Accessibility.Protected;
+
+                    case Accessibility.Internal:
+                        return baseTypeAccessibility == Accessibility.Public ||
+                            baseTypeAccessibility == Accessibility.Internal;
+
+                    case Accessibility.ProtectedAndInternal:
+                    case Accessibility.Public:
+                        return baseTypeAccessibility == Accessibility.Public;
+
+                    default:
+                        return false;
+                }
+            }
+
             private static bool ShouldReportOnType(ITypeSymbol typeSymbol)
             {
                 return
-                       !typeSymbol.Is(KnownType.System_Object) &&
-                       !typeSymbol.Is(KnownType.System_ValueType) &&
-                       !typeSymbol.Name.StartsWith("_", StringComparison.Ordinal) &&
-                       !typeSymbol.Is(KnownType.System_Enum);
+                    !typeSymbol.Is(KnownType.System_Object) &&
+                    !typeSymbol.Is(KnownType.System_ValueType) &&
+                    !typeSymbol.Name.StartsWith("_", StringComparison.Ordinal) &&
+                    !typeSymbol.Is(KnownType.System_Enum);
             }
 
             private ISymbol FindMostGeneralType()
